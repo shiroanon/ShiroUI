@@ -869,3 +869,4 @@ def reshape_mask(input_mask, output_shape):
         mask = mask.repeat((1, output_shape[1]) + (1,) * dims)[:,:output_shape[1]]
     mask = shiro.utils.repeat_to_batch_size(mask, output_shape[0])
     return mask
+#xcx
