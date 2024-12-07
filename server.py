@@ -445,7 +445,68 @@ class PromptServer():
                         original_pil.save(filepath, compress_level=4, pnginfo=metadata)
 
             return image_upload(post, image_save_function)
-
+        @routes.get("/api_img")
+        async def api_img(request):
+            # Get the image name from the query parameters
+            img_name = request.rel_url.query.get("name")
+            if not img_name:
+                return web.json_response({"error": "Image name not provided"}, status=400)
+        
+            # Define the directory where images are stored
+            img_dir = "/path/to/your/images"  # Update this path as needed
+            img_path = os.path.join(img_dir, img_name)
+        
+            # Check if the file exists
+            if not os.path.isfile(img_path):
+                return web.json_response({"error": "Image not found"}, status=404)
+        
+            try:
+                # Open the image and extract metadata
+                with Image.open(img_path) as img:
+                    metadata = img.info.get("prompt", {})
+                    if isinstance(metadata, str):
+                        metadata = json.loads(metadata)
+        
+                    prompt_data = get_pos_neg_keys(metadata)
+                    if not prompt_data["positive_key"] or not prompt_data["negative_key"]:
+                        return web.json_response({"error": "Prompt keys not found in metadata"}, status=400)
+        
+                    prompts = get_prompt(metadata, prompt_data["positive_key"], prompt_data["negative_key"])
+        
+                # Construct the image view URL
+                base_url = f"{request.scheme}://{request.host}"
+                img_view_url = f"{base_url}/view?filename={img_name}"
+        
+                # Prepare the response
+                response = {
+                    "imgurl": img_view_url,
+                    "positive prompt": prompts["positive"],
+                    "negative prompt": prompts["negative"]
+                }
+                return web.json_response(response)
+        
+            except Exception as e:
+                return web.json_response({"error": str(e)}, status=500)
+        
+        # Helper functions remain the same
+        def get_pos_neg_keys(img_metadata):
+            positive_key = None
+            negative_key = None
+            for key, value in img_metadata.items():
+                if "inputs" in value:
+                    inputs = value["inputs"]
+                    if "positive" in inputs:
+                        positive_key = inputs["positive"][0]
+                    if "negative" in inputs:
+                        negative_key = inputs["negative"][0]
+            return {"positive_key": positive_key, "negative_key": negative_key}
+        
+        def get_prompt(data, positive_key, negative_key):
+            positive = data.get(positive_key, {}).get("inputs", {}).get("text", "")
+            negative = data.get(negative_key, {}).get("inputs", {}).get("text", "")
+            return {"positive": positive, "negative": negative}
+        
+                
         @routes.get("/view")
         async def view_image(request):
             if "filename" in request.rel_url.query:
