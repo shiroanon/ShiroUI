@@ -1,10 +1,10 @@
-from comfy import sd1_clip
-from comfy import sdxl_clip
+from shiro import sd1_clip
+from shiro import sdxl_clip
 from transformers import T5TokenizerFast
-import comfy.text_encoders.t5
+import shiro.text_encoders.t5
 import torch
 import os
-import comfy.model_management
+import shiro.model_management
 import logging
 
 class T5XXLModel(sd1_clip.SDClipModel):
@@ -15,7 +15,7 @@ class T5XXLModel(sd1_clip.SDClipModel):
             model_options = model_options.copy()
             model_options["scaled_fp8"] = t5xxl_scaled_fp8
 
-        super().__init__(device=device, layer=layer, layer_idx=layer_idx, textmodel_json_config=textmodel_json_config, dtype=dtype, special_tokens={"end": 1, "pad": 0}, model_class=comfy.text_encoders.t5.T5, enable_attention_masks=attention_mask, return_attention_masks=attention_mask, model_options=model_options)
+        super().__init__(device=device, layer=layer, layer_idx=layer_idx, textmodel_json_config=textmodel_json_config, dtype=dtype, special_tokens={"end": 1, "pad": 0}, model_class=shiro.text_encoders.t5.T5, enable_attention_masks=attention_mask, return_attention_masks=attention_mask, model_options=model_options)
 
 
 def t5_xxl_detect(state_dict, prefix=""):
@@ -74,7 +74,7 @@ class SD3ClipModel(torch.nn.Module):
             self.clip_g = None
 
         if t5:
-            dtype_t5 = comfy.model_management.pick_weight_dtype(dtype_t5, dtype, device)
+            dtype_t5 = shiro.model_management.pick_weight_dtype(dtype_t5, dtype, device)
             self.t5_attention_mask = t5_attention_mask
             self.t5xxl = T5XXLModel(device=device, dtype=dtype_t5, model_options=model_options, attention_mask=self.t5_attention_mask)
             self.dtypes.add(dtype_t5)
@@ -112,7 +112,7 @@ class SD3ClipModel(torch.nn.Module):
             if self.clip_l is not None:
                 lg_out, l_pooled = self.clip_l.encode_token_weights(token_weight_pairs_l)
             else:
-                l_pooled = torch.zeros((1, 768), device=comfy.model_management.intermediate_device())
+                l_pooled = torch.zeros((1, 768), device=shiro.model_management.intermediate_device())
 
             if self.clip_g is not None:
                 g_out, g_pooled = self.clip_g.encode_token_weights(token_weight_pairs_g)
@@ -123,7 +123,7 @@ class SD3ClipModel(torch.nn.Module):
                     lg_out = torch.nn.functional.pad(g_out, (768, 0))
             else:
                 g_out = None
-                g_pooled = torch.zeros((1, 1280), device=comfy.model_management.intermediate_device())
+                g_pooled = torch.zeros((1, 1280), device=shiro.model_management.intermediate_device())
 
             if lg_out is not None:
                 lg_out = torch.nn.functional.pad(lg_out, (0, 4096 - lg_out.shape[-1]))
@@ -142,10 +142,10 @@ class SD3ClipModel(torch.nn.Module):
                 out = t5_out
 
         if out is None:
-            out = torch.zeros((1, 77, 4096), device=comfy.model_management.intermediate_device())
+            out = torch.zeros((1, 77, 4096), device=shiro.model_management.intermediate_device())
 
         if pooled is None:
-            pooled = torch.zeros((1, 768 + 1280), device=comfy.model_management.intermediate_device())
+            pooled = torch.zeros((1, 768 + 1280), device=shiro.model_management.intermediate_device())
 
         return out, pooled, extra
 

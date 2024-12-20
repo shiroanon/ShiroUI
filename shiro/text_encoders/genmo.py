@@ -1,10 +1,10 @@
-from comfy import sd1_clip
-import comfy.text_encoders.sd3_clip
+from shiro import sd1_clip
+import shiro.text_encoders.sd3_clip
 import os
 from transformers import T5TokenizerFast
 
 
-class T5XXLModel(comfy.text_encoders.sd3_clip.T5XXLModel):
+class T5XXLModel(shiro.text_encoders.sd3_clip.T5XXLModel):
     def __init__(self, **kwargs):
         kwargs["attention_mask"] = True
         super().__init__(**kwargs)
