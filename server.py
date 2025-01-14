@@ -326,76 +326,8 @@ class PromptServer():
             else:
                 return web.Response(status=400)
 
-        @routes.post("/delete/image")
-        async def delete_image(request):
-          data = await request.json()
-          filename = data.get("filename")
-          image_type = data.get("type", "output")  # Default type is 'output'
-       
-          if not filename:
-              return web.json_response({"error": "Filename not provided"}, status=400)
-       
-          # Validate and get the file path
-          filename, output_dir = folder_paths.annotated_filepath(filename)
-       
-          if filename[0] == '/' or '..' in filename:  # Security validation
-              return web.Response(status=400)
-       
-          if output_dir is None:
-              output_dir = folder_paths.get_directory_by_type(image_type)
-       
-          if not output_dir:
-              return web.json_response({"error": "Invalid image type"}, status=400)
-       
-          file_path = os.path.join(output_dir, filename)
-       
-          # Delete the file
-          if os.path.isfile(file_path):
-              os.remove(file_path)
-              return web.json_response({"status": "success", "message": f"Deleted {filename}"})
-          else:
-              return web.json_response({"error": "File not found"}, status=404)
         
-        @routes.get("/compress/image")
-        async def compress_image(request):
-            filename = request.rel_url.query.get("filename")
-            compression_quality = int(request.rel_url.query.get("quality", 75))  # Default quality is 75
-            max_size = int(request.rel_url.query.get("max_size", 800))  # Default max size is 800x800
-            image_type = request.rel_url.query.get("type", "output")  # Default type is 'output'
         
-            if not filename:
-                return web.json_response({"error": "Filename not provided"}, status=400)
-        
-            filename, output_dir = folder_paths.annotated_filepath(filename)
-        
-            if filename[0] == '/' or '..' in filename:  # Security validation
-                return web.Response(status=400)
-        
-            if output_dir is None:
-                output_dir = folder_paths.get_directory_by_type(image_type)
-        
-            if not output_dir:
-                return web.json_response({"error": "Invalid image type"}, status=400)
-        
-            file_path = os.path.join(output_dir, filename)
-        
-            if not os.path.isfile(file_path):
-                return web.json_response({"error": "File not found"}, status=404)
-        
-            try:
-                with Image.open(file_path) as img:
-                    img = ImageOps.contain(img, (max_size, max_size), Image.Resampling.LANCZOS)  # Resize
-                    buffer = BytesIO()
-                    img.save(buffer, format="JPEG", quality=compression_quality)  # Compress
-                    buffer.seek(0)
-        
-                    return web.Response(body=buffer.read(), content_type='image/jpeg',
-                                        headers={"Content-Disposition": f"filename=\"{filename}\""})
-            except Exception as e:
-                logging.error(f"Error compressing image: {e}")
-                return web.json_response({"error": "Failed to compress image"}, status=500)
-        
-                      
                
         @routes.post("/upload/image")
         async def upload_image(request):
@@ -445,67 +377,8 @@ class PromptServer():
                         original_pil.save(filepath, compress_level=4, pnginfo=metadata)
 
             return image_upload(post, image_save_function)
-        @routes.get("/api_img")
-        async def api_img(request):
-            # Get the image name from the query parameters
-            img_name = request.rel_url.query.get("name")
-            if not img_name:
-                return web.json_response({"error": "Image name not provided"}, status=400)
         
-            # Define the directory where images are stored
-            img_dir = "/path/to/your/images"  # Update this path as needed
-            img_path = os.path.join(img_dir, img_name)
-        
-            # Check if the file exists
-            if not os.path.isfile(img_path):
-                return web.json_response({"error": "Image not found"}, status=404)
-        
-            try:
-                # Open the image and extract metadata
-                with Image.open(img_path) as img:
-                    metadata = img.info.get("prompt", {})
-                    if isinstance(metadata, str):
-                        metadata = json.loads(metadata)
-        
-                    prompt_data = get_pos_neg_keys(metadata)
-                    if not prompt_data["positive_key"] or not prompt_data["negative_key"]:
-                        return web.json_response({"error": "Prompt keys not found in metadata"}, status=400)
-        
-                    prompts = get_prompt(metadata, prompt_data["positive_key"], prompt_data["negative_key"])
-        
-                # Construct the image view URL
-                base_url = f"{request.scheme}://{request.host}"
-                img_view_url = f"{base_url}/view?filename={img_name}"
-        
-                # Prepare the response
-                response = {
-                    "imgurl": img_view_url,
-                    "positive prompt": prompts["positive"],
-                    "negative prompt": prompts["negative"]
-                }
-                return web.json_response(response)
-        
-            except Exception as e:
-                return web.json_response({"error": str(e)}, status=500)
-        
-        # Helper functions remain the same
-        def get_pos_neg_keys(img_metadata):
-            positive_key = None
-            negative_key = None
-            for key, value in img_metadata.items():
-                if "inputs" in value:
-                    inputs = value["inputs"]
-                    if "positive" in inputs:
-                        positive_key = inputs["positive"][0]
-                    if "negative" in inputs:
-                        negative_key = inputs["negative"][0]
-            return {"positive_key": positive_key, "negative_key": negative_key}
-        
-        def get_prompt(data, positive_key, negative_key):
-            positive = data.get(positive_key, {}).get("inputs", {}).get("text", "")
-            negative = data.get(negative_key, {}).get("inputs", {}).get("text", "")
-            return {"positive": positive, "negative": negative}
-        
+       
                 
         @routes.get("/view")
         async def view_image(request):
@@ -548,6 +421,7 @@ class PromptServer():
                             buffer = BytesIO()
                             if image_format in ['jpeg'] or request.rel_url.query.get('channel', '') == 'rgb':
                                 img = img.convert("RGB")
+                            img.save("/tmp/preview.png")    
                             img.save(buffer, format=image_format, quality=quality)
                             buffer.seek(0)
 
