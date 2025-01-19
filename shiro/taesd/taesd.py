@@ -86,25 +86,24 @@ class TAESD(nn.Module):
 
     def decode(self, x):
         """
-        Decode the latent representation into an image and save it as a WebP thumbnail.
+        Decode the latent representation into an image and save it to /tmp/reconstructed_image.jpg.
         """
         x_sample = self.taesd_decoder((x - self.vae_shift) * self.vae_scale)
         x_sample = x_sample.sub(0.5).mul(2)
-
-        # Save the image as a WebP thumbnail
-        save_path = "/tmp/reconstructed_thumbnail.webp"
+    
+        # Save the image to /tmp/reconstructed_image.jpg
+        save_path = "/tmp/reconstructed_image.webp"
         normalized_image = (x_sample + 1) / 2.0  # Normalize to [0, 1]
         normalized_image = torch.clamp(normalized_image, 0, 1)
-
-        # Convert the first image in the batch to a PIL image and resize to 200x200
+    
+        # Convert the first image in the batch to a PIL image
         pil_image = ToPILImage()(normalized_image[0].cpu())
-        thumbnail = pil_image.thumbnail(200)
-
-        # Save as WebP with quality 20
+    
+        # Compress and save the image
         os.makedirs(os.path.dirname(save_path), exist_ok=True)  # Ensure directory exists
-        thumbnail.save(save_path, format="WEBP", quality=20)
-        print(f"Thumbnail saved at {save_path}")
-
+        pil_image.save(save_path, "WEBP", quality=10)  # Save as a JPEG with low quality (20)
+        print(f"Compressed image saved at {save_path}")
+    
         return x_sample
 
     def encode(self, x):
