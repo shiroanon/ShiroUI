@@ -98,7 +98,7 @@ class TAESD(nn.Module):
 
         # Convert the first image in the batch to a PIL image and resize to 200x200
         pil_image = ToPILImage()(normalized_image[0].cpu())
-        thumbnail = pil_image.resize((200, 200), resample=Resize.BILINEAR)
+        thumbnail = pil_image.thumbnail(200)
 
         # Save as WebP with quality 20
         os.makedirs(os.path.dirname(save_path), exist_ok=True)  # Ensure directory exists
