@@ -5,25 +5,38 @@ Tiny AutoEncoder for Stable Diffusion
 """
 import torch
 import torch.nn as nn
+from torchvision.transforms import ToPILImage
+import os
 
 import shiro.utils
 import shiro.ops
 
+
 def conv(n_in, n_out, **kwargs):
     return shiro.ops.disable_weight_init.Conv2d(n_in, n_out, 3, padding=1, **kwargs)
+
 
 class Clamp(nn.Module):
     def forward(self, x):
         return torch.tanh(x / 3) * 3
 
+
 class Block(nn.Module):
     def __init__(self, n_in, n_out):
         super().__init__()
-        self.conv = nn.Sequential(conv(n_in, n_out), nn.ReLU(), conv(n_out, n_out), nn.ReLU(), conv(n_out, n_out))
+        self.conv = nn.Sequential(
+            conv(n_in, n_out),
+            nn.ReLU(),
+            conv(n_out, n_out),
+            nn.ReLU(),
+            conv(n_out, n_out)
+        )
         self.skip = shiro.ops.disable_weight_init.Conv2d(n_in, n_out, 1, bias=False) if n_in != n_out else nn.Identity()
         self.fuse = nn.ReLU()
+
     def forward(self, x):
         return self.fuse(self.conv(x) + self.skip(x))
+
 
 def Encoder(latent_channels=4):
     return nn.Sequential(
@@ -43,6 +56,7 @@ def Decoder(latent_channels=4):
         Block(64, 64), Block(64, 64), Block(64, 64), nn.Upsample(scale_factor=2), conv(64, 64, bias=False),
         Block(64, 64), conv(64, 3),
     )
+
 
 class TAESD(nn.Module):
     latent_magnitude = 3
@@ -71,8 +85,23 @@ class TAESD(nn.Module):
         return x.sub(TAESD.latent_shift).mul(2 * TAESD.latent_magnitude)
 
     def decode(self, x):
+        """
+        Decode the latent representation into an image and save it to /tmp/reconstructed_image.png.
+        """
         x_sample = self.taesd_decoder((x - self.vae_shift) * self.vae_scale)
         x_sample = x_sample.sub(0.5).mul(2)
+
+        # Save the image to /tmp/reconstructed_image.png
+        save_path = "/tmp/reconstructed_image.png"
+        normalized_image = (x_sample + 1) / 2.0  # Normalize to [0, 1]
+        normalized_image = torch.clamp(normalized_image, 0, 1)
+
+        # Convert the first image in the batch to a PIL image and save
+        pil_image = ToPILImage()(normalized_image[0].cpu())
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)  # Ensure directory exists
+        pil_image.save(save_path)
+        print(f"Image saved at {save_path}")
+
         return x_sample
 
     def encode(self, x):

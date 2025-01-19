@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Stream</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        img {
+            max-width: 80%;
+            max-height: 80%;
+            border: 2px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <img id="streamed-image" src="" alt="Streaming Image">
+    <script>
+        const imageElement = document.getElementById('streamed-image');
+
+        // Function to update the image
+        function updateImage() {
+            const timestamp = new Date().getTime(); // Add a timestamp to bypass caching
+            imageElement.src = `https://8758d27b644dae6618a7792e6b0674a5.loophole.site/stream/image?t=${timestamp}`;
+        }
+
+        // Update the image every 2 seconds
+        setInterval(updateImage, 2000);
+
+        // Initial image load
+        updateImage();
+    </script>
+</body>
+</html>
