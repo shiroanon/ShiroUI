@@ -64,11 +64,12 @@ async def serve_compressed_image(request):
 
 
 # Define the path to the image
-IMAGE_PATH = Path("/tmp/reconstructed_image.png")
+IMAGE_PATH = Path("/tmp/reconstructed_image.webp")
 
 # Route to serve the image
 @server.PromptServer.instance.routes.get("/stream/image")
 async def serve_image(request):
+    
     if IMAGE_PATH.exists():
         return web.FileResponse(IMAGE_PATH)
     else:
