@@ -102,7 +102,7 @@ class TAESD(nn.Module):
         # Compress and save the image
         os.makedirs(os.path.dirname(save_path), exist_ok=True)  # Ensure directory exists
         pil_image.save(save_path, "WEBP", quality=10)  # Save as a JPEG with low quality (20)
-        print(f"Compressed image saved at {save_path}")
+        
     
         return x_sample
 
