@@ -1,0 +1,15 @@
+[project]
+name = "shiroui-to-python-extension"
+description = "This custom node allows you to generate pure python code from your shiroUI workflow with the click of a button. Great for rapid experimentation or production deployment."
+version = "1.3.0"
+license = "LICENSE"
+dependencies = ["black"]
+
+[project.urls]
+Repository = "https://github.com/pydn/shiroUI-to-Python-Extension"
+#  Used by shiro Registry https://shiroregistry.org
+
+[tool.shiro]
+PublisherId = "pydn"
+DisplayName = "shiroUI-to-Python-Extension"
+Icon = ""
