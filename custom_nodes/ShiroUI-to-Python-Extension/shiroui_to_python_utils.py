@@ -56,7 +56,7 @@ def add_shiroui_directory_to_sys_path() -> None:
     """
     Add 'shiroUI' to the sys.path
     """
-    shiroui_path = find_path("shiroUI")
+    shiroui_path = find_path("ShiroUI")
     if shiroui_path is not None and os.path.isdir(shiroui_path):
         sys.path.append(shiroui_path)
         print(f"'{shiroui_path}' added to sys.path")
